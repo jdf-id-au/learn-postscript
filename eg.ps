@@ -2,8 +2,22 @@
 %%EndComments
 % emacs ps-mode C-c C-c to preview, C-c C-b to debug
 %%BeginProlog
+% What idiomatically goes here?
 %%EndProlog
-/debug {pstack pop} def % println style debugging
+/debug {== pstack} def % println style debugging with message e.g. `(huh) debug`
+/check {(check) == ==} def % inspect and pop top of stack e.g. `10 check`
+
+/mm {25.4 div 72 mul} def % generally work in points to be idiomatic though
+/pagewidth 210 mm def % FIXME formally?
+/pageheight 297 mm def
+/margin 10 mm def
+<< /PageSize [pagewidth pageheight]
+   /PageOffset [margin margin]
+>> setpagedevice
+/w pagewidth margin 2 mul sub def
+/h pageheight margin 2 mul sub def
+/y {neg h add} def % flip y axis without transforming everything e.g. text
+
 /brewer [ % colorbrewer2.org: 9 classes qualtiative print friendly
     [228 26 28] % red
     [55 126 184] % blue
@@ -20,9 +34,12 @@
     { 255 div } forall
     setrgbcolor
 } def
-/row {1 add 10 mul} def % row-n to y-offset
-/pagewidth 297 25.4 div 72 mul def % FIXME formally?
-/time {exch 60 mul add 1440 div pagewidth mul} def % hh mm to x-offset
+/row {1 add 10 mul y} def % row-n to y-offset
+/time { % hh mm to x-offset
+    exch 60 mul add
+    1440 div
+    w mul
+} def
 /seg { % time segment as coloured horizontal line
     % stack: nth-row start-time end-time type
     % (lifo: nth-row start-time end-time type) debug
@@ -36,7 +53,25 @@
     stroke
 } def
 % 210 25.4 div 72 mul 0 translate 90 rotate % landscape
+/Helvetica findfont 10 scalefont setfont
+0 1 24 { % hour markers
+    newpath
+    dup /hour exch def
+    0 time 0 y moveto
+    0.5 setgray
+    hour 24 lt {
+    gsave
+    10 10 y rmoveto
+    hour 2 string cvs show
+    grestore
+    } if
+    0 pageheight margin 2 mul sub neg rlineto
+    0.5 setlinewidth
+    0.9 setgray
+    stroke
+} for
 0 08 30 time 10 30 time 0 seg
 0 10 33 time 12 01 time 2 seg
+0 12 01 time 14 22 time 3 seg
 showpage
 %%EOF
