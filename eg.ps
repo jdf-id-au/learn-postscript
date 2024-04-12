@@ -2,7 +2,7 @@
 %%EndComments
 % emacs ps-mode C-c C-c to preview, C-c C-b to debug
 %%BeginProlog
-% What idiomatically goes here?
+% What idiomatically goes here? See Document Structuring Conventions
 %%EndProlog
 /mm {25.4 div 72 mul} def % generally work in points to be idiomatic though
 /pagewidth 297 mm def % FIXME formally?
@@ -46,20 +46,20 @@
     /container 10 need exp cvi def
     container num add
     need 1 add string cvs
-    1 width getinterval % not printable to terminal for some reason
+    1 need getinterval
     end % scope dict
-} def
+} bind def
 /seg { % time segment as coloured horizontal line
     % stack: nth-row start-time end-time type
     newpath
     1 dict begin % scope dict
     gsave % scope graphics...
     setbrew
-    /end exch def
+    /finish exch def
     /start exch def
     /nth exch def
     start nth row moveto
-    end start sub 0 rlineto
+    finish start gt {finish} {24 00 time} ifelse start sub 0 rlineto
     5 setlinewidth
     stroke
     grestore
@@ -98,12 +98,13 @@
     stroke
     end
 } for
+0 (WMK3-2024-one) label
 0 08 30 time 10 30 time 0 seg
 0 10 33 time 12 01 time 2 seg
 0 12 01 time 14 22 time 3 seg
-0 (WMK3-2024-one) label
-1 10 15 time 17 29 time 5 seg
-1 17 30 time 19 42 time 6 seg
 1 (WMK3-2024-two) label
+1 10 15 time 17 29 time 5 seg
+1 17 30 time 19 42 time 1 seg
+1 20 00 time 01 23 time 4 seg
 showpage
 %%EOF
