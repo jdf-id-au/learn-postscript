@@ -40,35 +40,51 @@
     1440 div
     w mul
 } def
+/zeropad { % stack: int width
+    1 dict begin % scope dict
+    /width exch def
+    /num exch def
+    /actual num 1 gt {num} {1} ifelse log floor cvi 1 add def
+    /need actual width gt {actual} {width} ifelse def
+    /container 10 need exp cvi def
+    container num add
+    need 1 add string cvs
+    1 width getinterval % not printable to terminal for some reason
+    end % scope dict
+} def
 /seg { % time segment as coloured horizontal line
     % stack: nth-row start-time end-time type
     % (lifo: nth-row start-time end-time type) debug
     newpath
     setbrew
+    1 dict begin % scope dict
     /end exch def
     /start exch def
     row start exch moveto
     end start sub 0 rlineto
     5 setlinewidth
     stroke
+    end % scope dict
 } def
 % 210 25.4 div 72 mul 0 translate 90 rotate % landscape
 /Helvetica findfont 10 scalefont setfont
 0 1 24 { % hour markers
     newpath
+    1 dict begin
     dup /hour exch def
     0 time 0 y moveto
     0.5 setgray
     hour 24 lt {
     gsave
-    10 10 y rmoveto
-    hour 2 string cvs show
+    2 -10 rmoveto
+    hour 2 zeropad show
     grestore
     } if
     0 pageheight margin 2 mul sub neg rlineto
     0.5 setlinewidth
     0.9 setgray
     stroke
+    end
 } for
 0 08 30 time 10 30 time 0 seg
 0 10 33 time 12 01 time 2 seg
