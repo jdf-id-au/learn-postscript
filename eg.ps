@@ -1,6 +1,7 @@
 %!PS-Adobe-3.0 EPSF-3.0
 %%EndComments
 % emacs ps-mode C-c C-c to preview, C-c C-b to debug
+% Public domain licence
 %%BeginProlog
 % What idiomatically goes here? See Document Structuring Conventions
 %%EndProlog
@@ -32,9 +33,13 @@
     setrgbcolor
 } def
 /row {10 mul y margin sub} def % row-n to y-offset
-/time { % hh mm to x-offset
-    exch 60 mul add
-    1440 div
+/starthour 4 def
+/dayswide 1 def
+/time { % d hh mm to x-offset (d is zero-based day count)
+    3 -1 roll 24 mul
+    3 -1 roll add
+    starthour sub 60 mul add
+    1440 dayswide mul div
     w mul
 } def
 /zeropad { % stack: int width
@@ -48,27 +53,26 @@
     need 1 add string cvs
     1 need getinterval
     end % scope dict
-} bind def
+} def
 /seg { % time segment as coloured horizontal line
-    % stack: nth-row start-time end-time type
+    % stack: nth-row start-offset end-offset type
     newpath
-    1 dict begin % scope dict
+    1 dict begin
     gsave % scope graphics...
     setbrew
     /finish exch def
     /start exch def
     /nth exch def
     start nth row moveto
-    finish start gt {finish} {24 00 time} ifelse start sub 0 rlineto
+    finish start sub 0 rlineto
     5 setlinewidth
     stroke
     grestore
-    end % scope dict
+    end
 } def
 /label {
     % stack: nth-row label
     1 dict begin
-    pstack
     gsave
     /lbl exch def % managed to clobber /label despite scope dict?
     /nth exch def
@@ -80,31 +84,30 @@
 } def
 % 210 25.4 div 72 mul 0 translate 90 rotate % landscape
 /Helvetica findfont 10 scalefont setfont
-0 1 24 { % hour markers
+0 1 24 dayswide mul { % hour markers
     newpath % seems to accommodate inner `show`, and is ?optional
     1 dict begin
-    dup /hour exch def
-    0 time 0 y moveto
+    /hour exch starthour add def
+    /day hour 24 idiv def
+    day hour 24 mod 0 time 0 y moveto
     0.5 setgray
-    hour 24 lt {
     gsave
     2 -10 rmoveto
-    hour 2 zeropad show
+    hour 24 mod 2 zeropad show
     grestore
-    } if
     0 pageheight margin 2 mul sub neg rlineto
-    0.5 setlinewidth
+    hour 24 mod 0 eq {2} {0.5} ifelse setlinewidth
     0.9 setgray
     stroke
     end
 } for
-0 (WMK3-2024-one) label
-0 08 30 time 10 30 time 0 seg
-0 10 33 time 12 01 time 2 seg
-0 12 01 time 14 22 time 3 seg
-1 (WMK3-2024-two) label
-1 10 15 time 17 29 time 5 seg
-1 17 30 time 19 42 time 1 seg
-1 20 00 time 01 23 time 4 seg
+0 (label-one) label
+0 0 08 30 time 0 10 30 time 0 seg
+0 0 10 33 time 0 12 01 time 2 seg
+0 0 12 01 time 0 14 22 time 3 seg
+1 (label-two) label
+1 0 10 15 time 0 17 29 time 5 seg
+1 0 17 30 time 0 19 42 time 1 seg
+1 0 20 00 time 1 01 23 time 4 seg
 showpage
 %%EOF
