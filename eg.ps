@@ -1,8 +1,9 @@
 %!PS-Adobe-3.0 EPSF-3.0
-%%BoundingBox: 5 5 105 105
+%%EndComments
+% emacs ps-mode C-c C-c to preview, C-c C-b to debug
 %%BeginProlog
 %%EndProlog
-/debug {(halp) pstack pop} def % println style debugging
+/debug {pstack pop} def % println style debugging
 /brewer [ % colorbrewer2.org: 9 classes qualtiative print friendly
     [228 26 28] % red
     [55 126 184] % blue
@@ -14,26 +15,28 @@
     [247 129 191] % pink
     [153 153 153] % grey
 ] def
-/setbrew { % brewer index to setrgbcolor
-    brewer exch get
-    debug
+/setbrew { % brewer index to setrgbcolor, effectively pops arg
+    brewer exch get % zero-indexed
     { 255 div } forall
-    debug
     setrgbcolor
 } def
-/row {1 add 10 mul} def % row offset
+/row {1 add 10 mul} def % row-n to y-offset
+/pagewidth 297 25.4 div 72 mul def % FIXME formally?
+/time {exch 60 mul add 1440 div pagewidth mul} def % hh mm to x-offset
 /seg { % time segment as coloured horizontal line
     % stack: nth-row start-time end-time type
+    % (lifo: nth-row start-time end-time type) debug
     newpath
     setbrew
-    3 -1 roll % roll third-last to top of stack
-    row
-    debug
-    0 moveto
-    0 rlineto
+    /end exch def
+    /start exch def
+    row start exch moveto
+    end start sub 0 rlineto
     5 setlinewidth
     stroke
 } def
-0 10 500 0 seg
+% 210 25.4 div 72 mul 0 translate 90 rotate % landscape
+0 08 30 time 10 30 time 0 seg
+0 10 33 time 12 01 time 2 seg
 showpage
 %%EOF
