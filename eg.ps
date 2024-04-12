@@ -4,12 +4,9 @@
 %%BeginProlog
 % What idiomatically goes here?
 %%EndProlog
-/debug {== pstack} def % println style debugging with message e.g. `(huh) debug`
-/check {(check) == ==} def % inspect and pop top of stack e.g. `10 check`
-
 /mm {25.4 div 72 mul} def % generally work in points to be idiomatic though
-/pagewidth 210 mm def % FIXME formally?
-/pageheight 297 mm def
+/pagewidth 297 mm def % FIXME formally?
+/pageheight 210 mm def
 /margin 10 mm def
 << /PageSize [pagewidth pageheight]
    /PageOffset [margin margin]
@@ -34,7 +31,7 @@
     { 255 div } forall
     setrgbcolor
 } def
-/row {1 add 10 mul y} def % row-n to y-offset
+/row {10 mul y margin sub} def % row-n to y-offset
 /time { % hh mm to x-offset
     exch 60 mul add
     1440 div
@@ -54,22 +51,37 @@
 } def
 /seg { % time segment as coloured horizontal line
     % stack: nth-row start-time end-time type
-    % (lifo: nth-row start-time end-time type) debug
     newpath
-    setbrew
     1 dict begin % scope dict
+    gsave % scope graphics...
+    setbrew
     /end exch def
     /start exch def
-    row start exch moveto
+    /nth exch def
+    start nth row moveto
     end start sub 0 rlineto
     5 setlinewidth
     stroke
+    grestore
     end % scope dict
+} def
+/label {
+    % stack: nth-row label
+    1 dict begin
+    pstack
+    gsave
+    /lbl exch def % managed to clobber /label despite scope dict?
+    /nth exch def
+    0 nth row moveto
+    0 setgray
+    lbl show
+    grestore
+    end
 } def
 % 210 25.4 div 72 mul 0 translate 90 rotate % landscape
 /Helvetica findfont 10 scalefont setfont
 0 1 24 { % hour markers
-    newpath
+    newpath % seems to accommodate inner `show`, and is ?optional
     1 dict begin
     dup /hour exch def
     0 time 0 y moveto
@@ -89,5 +101,9 @@
 0 08 30 time 10 30 time 0 seg
 0 10 33 time 12 01 time 2 seg
 0 12 01 time 14 22 time 3 seg
+0 (WMK3-2024-one) label
+1 10 15 time 17 29 time 5 seg
+1 17 30 time 19 42 time 6 seg
+1 (WMK3-2024-two) label
 showpage
 %%EOF
