@@ -10,38 +10,45 @@
 /pageheight 210 mm def
 /margin 10 mm def
 << /PageSize [pagewidth pageheight]
-   /PageOffset [margin margin]
+   /PageOffset [margin margin] % "reposition the page image on the physical medium"
 >> setpagedevice
 /w pagewidth margin 2 mul sub def
 /h pageheight margin 2 mul sub def
 /y {neg h add} def % flip y axis without transforming everything e.g. text
 
-/brewer [ % colorbrewer2.org: 9 classes qualtiative print friendly
-    [228 26 28] % red
+/brewer [ % colorbrewer2.org: 9 classes qualitative print friendly
     [55 126 184] % blue
-    [77 175 74] % green
     [152 78 163] % purple
-    [255 127 0] % orange
     [255 255 51] % yellow
     [166 86 40] % brown
+    [77 175 74] % green
     [247 129 191] % pink
+    [228 26 28] % red
+    [255 127 0] % orange
     [153 153 153] % grey
 ] def
-/setbrew { % brewer index to setrgbcolor, effectively pops arg
+/setbrew { % brewer index to setrgbcolor, consumes arg
     brewer exch get % zero-indexed
     { 255 div } forall
     setrgbcolor
 } def
-/row {10 mul y margin sub} def % row-n to y-offset
+/inset [50 0 0 100] def % t r b l
+/ix inset 3 get def
+/iy inset 0 get def
+/iw w ix sub inset 1 get sub def
+/ih h iy sub inset 2 get sub def
+/row {10 mul y iy sub} def % row-n to y-offset
 /starthour 4 def
-/dayswide 1 def
+/dayswide 1 def % implementation requires integer
 /time { % d hh mm to x-offset (d is zero-based day count)
     3 -1 roll 24 mul
     3 -1 roll add
     starthour sub 60 mul add
     1440 dayswide mul div
-    w mul
+    iw mul ix add
 } def
+/earliest 0 starthour 0 time def
+/latest dayswide starthour 0 time def
 /zeropad { % stack: int width
     1 dict begin % scope dict
     /width exch def
@@ -55,16 +62,35 @@
     end % scope dict
 } def
 /seg { % time segment as coloured horizontal line
-    % stack: nth-row start-offset end-offset type
+    % stack: nth-row [d h m] [d h m] type
     newpath
     1 dict begin
     gsave % scope graphics...
     setbrew
-    /finish exch def
-    /start exch def
+    /finish exch aload pop time def
+    /start exch aload pop time def
     /nth exch def
-    start nth row moveto
-    finish start sub 0 rlineto
+    /as 1 def % arrow size
+    start earliest lt {
+        earliest nth row moveto
+        0 as rlineto
+        as neg as neg rlineto
+        as as neg rlineto
+        0 as rlineto
+        closepath
+    } {
+        start nth row moveto
+    } ifelse
+    finish latest gt {
+        latest nth row lineto
+        0 as rlineto
+        as as neg rlineto
+        as neg as neg rlineto
+        0 as rlineto
+        closepath
+    } {
+        finish nth row lineto
+    } ifelse
     5 setlinewidth
     stroke
     grestore
@@ -82,32 +108,79 @@
     grestore
     end
 } def
-% 210 25.4 div 72 mul 0 translate 90 rotate % landscape
-/Helvetica findfont 10 scalefont setfont
-0 1 24 dayswide mul { % hour markers
+
+/Helvetica findfont 14 scalefont setfont % title
+gsave 0 14 y moveto 0 setgray (Prototype theatre flow view) show grestore
+
+/Helvetica findfont 10 scalefont setfont % hour markers
+0 1 24 dayswide mul {
     newpath % seems to accommodate inner `show`, and is ?optional
     1 dict begin
-    /hour exch starthour add def
+    /n exch def
+    /hour n starthour add def
     /day hour 24 idiv def
-    day hour 24 mod 0 time 0 y moveto
+    day hour 24 mod 0 time -2 row moveto
     0.5 setgray
-    gsave
-    2 -10 rmoveto
-    hour 24 mod 2 zeropad show
-    grestore
-    0 pageheight margin 2 mul sub neg rlineto
+    n 24 dayswide mul lt {
+        gsave
+        2 -10 rmoveto
+        hour 24 mod 2 zeropad show
+        grestore
+    } if
+    0 ih neg rlineto
     hour 24 mod 0 eq {2} {0.5} ifelse setlinewidth
     0.9 setgray
     stroke
     end
 } for
-0 (label-one) label
-0 0 08 30 time 0 10 30 time 0 seg
-0 0 10 33 time 0 12 01 time 2 seg
-0 0 12 01 time 0 14 22 time 3 seg
-1 (label-two) label
-1 0 10 15 time 0 17 29 time 5 seg
-1 0 17 30 time 0 19 42 time 1 seg
-1 0 20 00 time 1 01 23 time 4 seg
+
+/events [
+    % (ward ready)
+    (send)
+    (bay)
+    (anaes start)
+    (theatre in)
+    (surg start)
+    (surg end)
+    (wait PACU)
+    (wait ICU)
+    (theatre out)
+] def
+/nevents events length def
+
+0 1 nevents 1 sub { % legend
+    1 dict begin
+    newpath
+    /ss 10 def % swatch size
+    /ls w nevents div def % label size
+    dup dup dup
+    ls mul 0 moveto
+    ss 0 rlineto
+    0 ss rlineto
+    ss neg 0 rlineto
+    0 ss neg rlineto
+    closepath
+    setbrew
+    fill
+    0 setgray
+    ls mul 15 add 2 moveto
+    events exch get show
+    end
+} for
+
+0 [0 07 45] [0 08 05] 0 seg % rework to hold over until next start time
+0 [0 08 05] [0 08 08] 1 seg
+0 [0 08 08] [0 08 30] 2 seg
+0 [0 08 45] [0 10 23] 3 seg
+0 [0 10 23] [0 11 09] 4 seg
+0 [0 08 08] [0 08 30] 5 seg
+
+0 (case-one) label
+1 [0 2 15] [0 17 29] 7 seg
+1 [0 17 30] [0 19 42] 1 seg
+1 [0 20 00] [1 01 23] 4 seg
+1 [1 01 50] [1 06 50] 6 seg
+1 (case-two) label
+
 showpage
 %%EOF
