@@ -84,7 +84,6 @@
         nt setbrew
         userdict /prevtype nt put
         tp earliest lt { % underflows scale
-            (underflow) ==
             earliest currow row moveto
             as neg harrow
         } {
@@ -146,10 +145,10 @@ gsave 0 14 y moveto 0 setgray (Prototype theatre flow view 14 Apr 2024) show gre
     (anaes start)
     (theatre in)
     (surg start)
-    (surg end)
+    (surg stop)
     (wait PACU)
     (wait ICU)
-    (anaes stop)
+    (theatre out)
 ] def
 /nevents events length def
 
