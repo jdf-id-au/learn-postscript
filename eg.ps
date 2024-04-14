@@ -19,10 +19,10 @@
 /brewer [ % colorbrewer2.org: 9 classes qualitative print friendly
     [55 126 184] % blue
     [152 78 163] % purple
-    [255 255 51] % yellow
+    [247 129 191] % pink
     [166 86 40] % brown
     [77 175 74] % green
-    [247 129 191] % pink
+    [255 255 51] % yellow
     [228 26 28] % red
     [255 127 0] % orange
     [153 153 153] % grey
@@ -38,7 +38,7 @@
 /iw w ix sub inset 1 get sub def
 /ih h iy sub inset 2 get sub def
 /row {10 mul y iy sub} def % row-n to y-offset
-/starthour 4 def
+/starthour 7 def
 /dayswide 1 def % implementation requires integer
 /time { % d hh mm to x-offset (d is zero-based day count)
     3 -1 roll 24 mul
@@ -61,56 +61,61 @@
     1 need getinterval
     end % scope dict
 } def
-/seg { % time segment as coloured horizontal line
-    % stack: nth-row [d h m] [d h m] type
-    newpath
+/currow -1 def
+/prevtype -1 def
+/harrow { % horizontal arrow (negative size means left)
+    % stack: arrowsize
     1 dict begin
-    gsave % scope graphics...
-    setbrew
-    /finish exch aload pop time def
-    /start exch aload pop time def
-    /nth exch def
-    /as 1 def % arrow size
-    start earliest lt {
-        earliest nth row moveto
-        0 as rlineto
-        as neg as neg rlineto
-        as as neg rlineto
-        0 as rlineto
-        closepath
-    } {
-        start nth row moveto
-    } ifelse
-    finish latest gt {
-        latest nth row lineto
-        0 as rlineto
-        as as neg rlineto
-        as neg as neg rlineto
-        0 as rlineto
-        closepath
-    } {
-        finish nth row lineto
-    } ifelse
-    5 setlinewidth
-    stroke
-    grestore
+    /as exch def
+    0 as rlineto
+    as as neg rlineto
+    as neg as neg rlineto
+    closepath
     end
 } def
-/label {
-    % stack: nth-row label
+/seg { % time segment as coloured horizontal line
+    % stack: [d h m] nexttype
     1 dict begin
-    gsave
-    /lbl exch def % managed to clobber /label despite scope dict?
-    /nth exch def
-    0 nth row moveto
-    0 setgray
-    lbl show
-    grestore
+    /nt exch def % next type (i.e. starting at this timepoint)
+    /tp exch aload pop time def % timepoint
+    /as 1 def % arrow size
+    5 setlinewidth
+    prevtype 0 lt { % start of row
+        nt setbrew
+        userdict /prevtype nt put
+        tp earliest lt { % underflows scale
+            (underflow) ==
+            earliest currow row moveto
+            as neg harrow
+        } {
+            tp currow row moveto
+        } ifelse
+    } {
+        tp earliest ge {
+            tp latest le {
+                tp currow row lineto
+            } {
+                latest currow row lineto
+                as harrow
+            } ifelse
+        } if
+        stroke
+        nt setbrew
+        tp currow row moveto % wrong
+    } ifelse
     end
+} def
+/label { % label new case row and open path
+    % stack: nth-row label
+    /currow currow 1 add def
+    /prevtype -1 def
+    0 currow row moveto
+    0 setgray
+    show
 } def
 
 /Helvetica findfont 14 scalefont setfont % title
-gsave 0 14 y moveto 0 setgray (Prototype theatre flow view) show grestore
+gsave 0 14 y moveto 0 setgray (Prototype theatre flow view 14 Apr 2024) show grestore
 
 /Helvetica findfont 10 scalefont setfont % hour markers
 0 1 24 dayswide mul {
@@ -134,7 +139,7 @@ gsave 0 14 y moveto 0 setgray (Prototype theatre flow view) show grestore
     end
 } for
 
-/events [
+/events [ % currently array to line up with brewer (vs trying dict)
     % (ward ready)
     (send)
     (bay)
@@ -144,7 +149,7 @@ gsave 0 14 y moveto 0 setgray (Prototype theatre flow view) show grestore
     (surg end)
     (wait PACU)
     (wait ICU)
-    (theatre out)
+    (anaes stop)
 ] def
 /nevents events length def
 
@@ -168,19 +173,23 @@ gsave 0 14 y moveto 0 setgray (Prototype theatre flow view) show grestore
     end
 } for
 
-0 [0 07 45] [0 08 05] 0 seg % rework to hold over until next start time
-0 [0 08 05] [0 08 08] 1 seg
-0 [0 08 08] [0 08 30] 2 seg
-0 [0 08 45] [0 10 23] 3 seg
-0 [0 10 23] [0 11 09] 4 seg
-0 [0 08 08] [0 08 30] 5 seg
-
-0 (case-one) label
-1 [0 2 15] [0 17 29] 7 seg
-1 [0 17 30] [0 19 42] 1 seg
-1 [0 20 00] [1 01 23] 4 seg
-1 [1 01 50] [1 06 50] 6 seg
-1 (case-two) label
-
+(case-one) label
+[0 07 45] 0 seg % rework to hold over until next start time
+[0 08 05] 1 seg
+[0 08 08] 2 seg
+[0 08 29] 3 seg
+[0 08 50] 4 seg
+[0 11 22] 5 seg
+[0 11 32] 6 seg
+[0 11 48] 8 seg
+(case-two) label
+[0 06 45] 0 seg
+[0 07 10] 1 seg
+[0 07 11] 2 seg
+[0 07 52] 3 seg
+[0 08 23] 4 seg
+[0 11 01] 5 seg
+[0 11 31] 7 seg
+[0 12 31] 8 seg
 showpage
 %%EOF
